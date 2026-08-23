@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "job": "Insulation",
+    "price": 300.0,
+    "completed": false,
+    "color": "#e74c3c"
+  },
+  {
+    "id": 2,
+    "job": "Drywall",
+    "price": 300.0,
+    "completed": false,
+    "color": "#e74c3c"
+  },
+  {
+    "id": 3,
+    "job": "mini split https://senville.com/12000-btu-mini-split-air-conditioner-senl-12cd/",
+    "price": 850.0,
+    "completed": false,
+    "color": "#e67e22"
+  },
+  {
+    "id": 4,
+    "job": "Door",
+    "price": 750.0,
+    "completed": false,
+    "color": "#3498db"
+  },
+  {
+    "id": 5,
+    "job": "Front Door Awning",
+    "price": 200.0,
+    "completed": false,
+    "color": "#3498db"
+  }
+]

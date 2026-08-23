@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  house-jobs:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: house-jobs-tracker
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app
+    environment:
+      - TZ=America/Chicago

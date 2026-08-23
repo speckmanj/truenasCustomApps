@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Jobs Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; min-height: 100vh; padding: 40px 20px; color: #e0e0e0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; font-size: 1.5rem; font-weight: 600; color: #e0e0e0; margin-bottom: 32px; }
+
+        .summary { display: flex; gap: 1px; background: #16213e; border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+        .summary-item { flex: 1; background: #16213e; padding: 16px; text-align: center; }
+        .summary-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8899aa; margin-bottom: 6px; }
+        .summary-value { font-size: 1.25rem; font-weight: 600; color: #e0e0e0; }
+        .summary-value.remaining { color: #f39c12; }
+        .summary-value.completed-amt { color: #27ae60; }
+
+        .color-summary { background: #16213e; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-wrap: wrap; }
+        .color-summary-item { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: #0f1829; }
+        .color-summary-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); }
+        .color-summary-text { font-size: 0.8rem; color: #8899aa; white-space: nowrap; }
+        .color-summary-text strong { color: #c0c0c0; }
+
+        .add-form { background: #16213e; border-radius: 10px; padding: 16px; margin-bottom: 16px; display: flex; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); align-items: center; }
+        .add-form input[type="text"] { border: none; padding: 8px 4px; font-size: 1rem; background: transparent; outline: none; flex: 1; min-width: 0; color: #e0e0e0; }
+        .add-form input[type="number"] { border: none; padding: 8px 4px; font-size: 0.95rem; background: transparent; outline: none; width: 90px; text-align: right; color: #8899aa; font-family: 'SF Mono', 'Fira Code', monospace; }
+        .add-form input[type="number"]::placeholder { color: #556677; }
+
+        .color-picker-wrapper { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+        .color-picker-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #334455; cursor: pointer; background: #0f1829; transition: all 0.15s; }
+        .color-picker-btn:hover { border-color: #556677; transform: scale(1.1); }
+        .color-picker-btn.has-color { border-color: #8899aa; }
+
+        .add-color-dropdown { position: absolute; top: 36px; left: 0; background: #16213e; border-radius: 8px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 10; display: flex; gap: 6px; flex-wrap: wrap; width: 170px; }
+        .add-color-option { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+        .add-color-option:hover { transform: scale(1.2); border-color: #aaa; }
+
+        .add-btn { background: #e0e0e0; color: #1a1a2e; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+        .add-btn:hover { background: #fff; }
+
+        .color-filter { background: #16213e; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-wrap: wrap; }
+        .filter-label { font-size: 0.8rem; color: #8899aa; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+        .filter-colors { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filter-color-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+        .filter-color-btn:hover { transform: scale(1.2); }
+        .filter-color-btn.active { border-color: #e0e0e0; box-shadow: 0 0 0 2px rgba(224,224,224,0.2); }
+        .filter-color-btn.all-btn { background: linear-gradient(135deg, #e74c3c 25%, #f1c40f 25%, #f1c40f 50%, #2ecc71 50%, #2ecc71 75%, #3498db 75%); background-size: 8px 8px; }
+
+        .job-list { background: #16213e; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .job-item { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #1a2d4a; gap: 12px; position: relative; }
+        .job-item:last-child { border-bottom: none; }
+        .job-item.completed { opacity: 0.5; }
+
+        .checkbox { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #334455; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+        .checkbox:hover { border-color: #556677; }
+        .checkbox.checked { background: #27ae60; border-color: #27ae60; }
+        .checkbox.checked::after { content: '\2713'; color: white; font-size: 12px; }
+
+        .color-indicator { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s; }
+        .color-indicator:hover { transform: scale(1.3); }
+
+        .job-name { flex: 1; min-width: 0; font-size: 0.95rem; color: #e0e0e0; }
+        .completed .job-name { text-decoration: line-through; color: #667788; }
+        .job-price { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.9rem; color: #8899aa; white-space: nowrap; }
+
+        .edit-input { padding: 6px 8px; border: 2px solid #4a6fa5; border-radius: 6px; font-size: 0.95rem; width: 100%; background: #0f1829; color: #e0e0e0; }
+        .action-btn { background: #c0392b; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
+        .action-btn:hover { background: #e74c3c; }
+        .edit-btn { background: #2980b9; }
+        .edit-btn:hover { background: #3498db; }
+        .save-btn { background: #27ae60; }
+        .save-btn:hover { background: #2ecc71; }
+
+        .color-edit-dropdown { position: absolute; left: 20px; top: 100%; background: #16213e; border-radius: 8px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 10; display: flex; gap: 6px; flex-wrap: wrap; }
+        .color-edit-option { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+        .color-edit-option:hover { transform: scale(1.2); border-color: #aaa; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #556677; }
+        .empty-state p { font-size: 1.1rem; }
+
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            .summary-item { padding: 12px 8px; }
+            .summary-value { font-size: 1rem; }
+            .job-item { padding: 12px 10px; }
+            .add-form { flex-wrap: wrap; }
+            .add-form input[type="text"] { flex: 1 1 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>House Jobs Tracker</h1>
+
+        <div class="summary">
+            <div class="summary-item"><div class="summary-label">Total</div><div class="summary-value" id="totalJobs">0</div></div>
+            <div class="summary-item"><div class="summary-label">Cost</div><div class="summary-value" id="totalCost">$0</div></div>
+            <div class="summary-item"><div class="summary-label">Remaining</div><div class="summary-value remaining" id="remainingCost">$0</div></div>
+            <div class="summary-item"><div class="summary-label">Done</div><div class="summary-value completed-amt" id="completedCost">$0</div></div>
+        </div>
+
+        <div class="color-summary" id="colorSummary"></div>
+
+        <div class="add-form">
+            <input type="text" id="newJobDesc" placeholder="Add a job..." required>
+            <input type="number" id="newJobPrice" placeholder="0.00" step="0.01" min="0">
+            <div class="color-picker-wrapper" id="addColorWrapper" title="Select color category">
+                <div class="color-picker-btn" id="colorPickerBtn" onclick="toggleAddColorDropdown()"></div>
+            </div>
+            <button class="add-btn" onclick="addJobFromForm()">+ Add</button>
+        </div>
+
+        <div class="color-filter">
+            <span class="filter-label">Filter:</span>
+            <div class="filter-colors" id="filterColors"></div>
+        </div>
+
+        <div class="job-list" id="jobsList">
+            <div class="empty-state"><p>No jobs yet. Add one above!</p></div>
+        </div>
+    </div>
+
+    <script>
+        let jobs = [];
+        let currentFilter = '';
+        let selectedColor = '';
+        let activeColorEditId = null;
+
+        const COLORS = [
+            { value: '#e74c3c', name: 'red' },
+            { value: '#e67e22', name: 'orange' },
+            { value: '#f1c40f', name: 'yellow' },
+            { value: '#2ecc71', name: 'green' },
+            { value: '#3498db', name: 'blue' },
+            { value: '#9b59b6', name: 'purple' },
+            { value: '#1abc9c', name: 'teal' },
+            { value: '#e84393', name: 'pink' },
+            { value: '#636e72', name: 'gray' },
+        ];
+
+        let addColorDropdownOpen = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('newJobDesc').addEventListener('keypress', function(e) { if (e.key === 'Enter') addJobFromForm(); });
+            document.getElementById('newJobPrice').addEventListener('keypress', function(e) { if (e.key === 'Enter') addJobFromForm(); });
+            fetchJobs();
+        });
+
+        function toggleAddColorDropdown() {
+            const wrapper = document.getElementById('addColorWrapper');
+            const existing = wrapper.querySelector('.add-color-dropdown');
+            if (existing) { existing.remove(); addColorDropdownOpen = false; return; }
+
+            addColorDropdownOpen = true;
+            const dropdown = document.createElement('div');
+            dropdown.className = 'add-color-dropdown';
+
+            COLORS.forEach(c => {
+                const opt = document.createElement('div');
+                opt.className = 'add-color-option';
+                opt.style.background = c.value;
+                opt.title = c.name;
+                opt.onclick = function(e) {
+                    e.stopPropagation();
+                    selectedColor = c.value;
+                    const btn = document.getElementById('colorPickerBtn');
+                    btn.style.background = selectedColor;
+                    btn.classList.add('has-color');
+                    dropdown.remove();
+                    addColorDropdownOpen = false;
+                };
+                dropdown.appendChild(opt);
+            });
+
+            // None option
+            const noneOpt = document.createElement('div');
+            noneOpt.className = 'add-color-option';
+            noneOpt.style.background = '#f0f0f0';
+            noneOpt.style.border = '2px solid #ddd';
+            noneOpt.title = 'No color';
+            noneOpt.onclick = function(e) {
+                e.stopPropagation();
+                selectedColor = '';
+                const btn = document.getElementById('colorPickerBtn');
+                btn.style.background = '#f0f0f0';
+                btn.classList.remove('has-color');
+                dropdown.remove();
+                addColorDropdownOpen = false;
+            };
+            dropdown.appendChild(noneOpt);
+
+            wrapper.appendChild(dropdown);
+            setTimeout(() => {
+                document.addEventListener('click', function handler(e) {
+                    if (!dropdown.contains(e.target) && e.target.id !== 'colorPickerBtn') {
+                        dropdown.remove();
+                        addColorDropdownOpen = false;
+                        document.removeEventListener('click', handler);
+                    }
+                });
+            }, 10);
+        }
+
+        async function fetchJobs() {
+            try { const response = await fetch('/api/jobs'); jobs = await response.json(); updateFilterColors(); updateColorSummary(); renderJobs(); updateSummary(); }
+            catch (error) { console.error('Error fetching jobs:', error); }
+        }
+
+        async function addJob(jobData) {
+            try {
+                const response = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(jobData) });
+                if (response.ok) { const newJob = await response.json(); jobs.push(newJob); updateFilterColors(); updateColorSummary(); renderJobs(); updateSummary(); saveToStorage(); }
+            } catch (error) { console.error('Error adding job:', error); }
+        }
+
+        async function updateJob(id, updates) {
+            try {
+                const response = await fetch(`/api/jobs/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+                if (response.ok) { const updatedJob = await response.json(); const index = jobs.findIndex(j => j.id === id); if (index !== -1) jobs[index] = updatedJob; updateFilterColors(); updateColorSummary(); renderJobs(); updateSummary(); saveToStorage(); }
+            } catch (error) { console.error('Error updating job:', error); }
+        }
+
+        async function deleteJob(id) {
+            jobs = jobs.filter(j => j.id !== id);
+            try {
+                const response = await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
+                if (response.ok) { updateFilterColors(); updateColorSummary(); renderJobs(); updateSummary(); saveToStorage(); } else { fetchJobs(); }
+            } catch (error) { console.error('Error deleting job:', error); fetchJobs(); }
+        }
+
+        function updateFilterColors() {
+            const container = document.getElementById('filterColors');
+            const usedColors = [...new Set(jobs.map(j => j.color).filter(c => c))];
+            let html = `<button class="filter-color-btn all-btn ${currentFilter === '' ? 'active' : ''}" data-filter="" title="All colors" onclick="setFilter('')"></button>`;
+            COLORS.forEach(c => {
+                if (usedColors.includes(c.value)) {
+                    html += `<button class="filter-color-btn ${currentFilter === c.value ? 'active' : ''}" data-filter="${c.value}" style="background:${c.value}" title="${c.name}" onclick="setFilter('${c.value}')"></button>`;
+                }
+            });
+            // Also show custom colors not in preset list
+            usedColors.forEach(c => {
+                if (!COLORS.find(preset => preset.value === c)) {
+                    html += `<button class="filter-color-btn ${currentFilter === c ? 'active' : ''}" data-filter="${c}" style="background:${c}" title="custom" onclick="setFilter('${c}')"></button>`;
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        function setFilter(color) { currentFilter = color; updateFilterColors(); renderJobs(); }
+
+        function formatCurrency(amount) { return '$' + Math.abs(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'); }
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function renderJobs() {
+            const container = document.getElementById('jobsList');
+            let filteredJobs = currentFilter ? jobs.filter(j => j.color === currentFilter) : jobs;
+            if (filteredJobs.length === 0) { container.innerHTML = '<div class="empty-state"><p>No jobs yet. Add one above!</p></div>'; return; }
+
+            let html = '';
+            filteredJobs.forEach(job => {
+                const isCompleted = job.completed;
+                const color = job.color || '';
+                html += `<div class="job-item ${isCompleted ? 'completed' : ''}" data-id="${job.id}" style="padding-left: 20px;">`;
+                html += `<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${color || 'transparent'};border-radius:4px 0 0 4px;"></div>`;
+                html += `<div class="checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleComplete(${job.id}, ${!isCompleted})"></div>`;
+                html += `<div class="color-indicator" style="background:${color || '#ddd'}" onclick="toggleColorEdit(${job.id}, this)" title="${color || 'Add color'}"></div>`;
+                html += `<span class="job-name" ondblclick="startEditName(${job.id}, this)">${escapeHtml(job.job)}</span>`;
+                html += `<span class="job-price" ondblclick="startEditPrice(${job.id}, this)">${formatCurrency(job.price)}</span>`;
+                html += `<button class="action-btn edit-btn" onclick="startEditInline(${job.id})">Edit</button>`;
+                html += `<button class="action-btn" onclick="deleteJob(${job.id})">Delete</button></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function updateSummary() {
+            const totalJobs = jobs.length;
+            const totalCost = jobs.reduce((sum, j) => sum + j.price, 0);
+            const remainingCost = jobs.filter(j => !j.completed).reduce((sum, j) => sum + j.price, 0);
+            const completedCost = jobs.filter(j => j.completed).reduce((sum, j) => sum + j.price, 0);
+            document.getElementById('totalJobs').textContent = totalJobs;
+            document.getElementById('totalCost').textContent = formatCurrency(totalCost);
+            document.getElementById('remainingCost').textContent = formatCurrency(remainingCost);
+            document.getElementById('completedCost').textContent = formatCurrency(completedCost);
+        }
+
+        function updateColorSummary() {
+            const container = document.getElementById('colorSummary');
+            const colorMap = {};
+            jobs.forEach(j => {
+                const c = j.color || '';
+                if (!c) return;
+                if (!colorMap[c]) colorMap[c] = { total: 0, remaining: 0, completed: 0 };
+                colorMap[c].total += j.price;
+                if (j.completed) {
+                    colorMap[c].completed += j.price;
+                } else {
+                    colorMap[c].remaining += j.price;
+                }
+            });
+
+            const usedColors = Object.keys(colorMap).sort();
+            if (usedColors.length === 0) { container.innerHTML = ''; return; }
+
+            let html = '';
+            usedColors.forEach(c => {
+                const d = colorMap[c];
+                const name = c.toUpperCase();
+                html += `<div class="color-summary-item">
+                    <div class="color-summary-dot" style="background:${c}"></div>
+                    <span class="color-summary-text"><strong>${formatCurrency(d.total)}</strong></span>
+                    ${d.remaining > 0 ? `<span class="color-summary-text">${formatCurrency(d.remaining)} left</span>` : ''}
+                    ${d.completed > 0 && d.remaining > 0 ? `<span class="color-summary-text" style="color:#27ae60">✓${formatCurrency(d.completed)}</span>` : ''}
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleColorEdit(id, indicatorEl) {
+            const existing = document.querySelector('.color-edit-dropdown');
+            if (existing && activeColorEditId === id) { existing.remove(); activeColorEditId = null; return; }
+            if (existing) existing.remove();
+
+            activeColorEditId = id;
+            const job = jobs.find(j => j.id === id);
+            const itemEl = indicatorEl.parentElement;
+            const dropdown = document.createElement('div');
+            dropdown.className = 'color-edit-dropdown';
+
+            // Add custom color picker input for any color
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '28px';
+            wrapper.style.height = '28px';
+            const pickerProxy = document.createElement('input');
+            pickerProxy.type = 'color';
+            pickerProxy.style.width = '28px';
+            pickerProxy.style.height = '28px';
+            pickerProxy.style.border = 'none';
+            pickerProxy.style.cursor = 'pointer';
+            pickerProxy.style.background = (job && job.color) ? job.color : '#e74c3c';
+            pickerProxy.title = 'Pick any color';
+            pickerProxy.onchange = function(e) { e.stopPropagation(); updateJob(id, { color: this.value }); dropdown.remove(); activeColorEditId = null; };
+            wrapper.appendChild(pickerProxy);
+            dropdown.appendChild(wrapper);
+
+            // Draw separator
+            const sep = document.createElement('div');
+            sep.style.cssText = 'width:2px;background:#ddd;margin:0 4px;align-self:stretch;';
+            dropdown.appendChild(sep);
+
+            COLORS.forEach(c => {
+                const opt = document.createElement('div');
+                opt.className = 'color-edit-option';
+                opt.style.background = c.value;
+                opt.title = c.name;
+                opt.onclick = function(e) { e.stopPropagation(); updateJob(id, { color: c.value }); dropdown.remove(); activeColorEditId = null; };
+                dropdown.appendChild(opt);
+            });
+
+            const noneOpt = document.createElement('div');
+            noneOpt.className = 'color-edit-option';
+            noneOpt.style.background = '#f0f0f0';
+            noneOpt.style.border = '2px solid #ddd';
+            noneOpt.title = 'No color';
+            noneOpt.onclick = function(e) { e.stopPropagation(); updateJob(id, { color: '' }); dropdown.remove(); activeColorEditId = null; };
+            dropdown.appendChild(noneOpt);
+
+            itemEl.style.position = 'relative';
+            itemEl.appendChild(dropdown);
+            setTimeout(() => {
+                document.addEventListener('click', function handler(e) {
+                    if (!dropdown.contains(e.target) && e.target !== indicatorEl) { dropdown.remove(); activeColorEditId = null; document.removeEventListener('click', handler); }
+                });
+            }, 10);
+        }
+
+        function toggleComplete(id, checked) { const job = jobs.find(j => j.id === id); if (job) updateJob(id, { completed: checked }); }
+
+        function addJobFromForm() {
+            const descEl = document.getElementById('newJobDesc');
+            const priceEl = document.getElementById('newJobPrice');
+            const desc = descEl.value.trim();
+            const price = parseFloat(priceEl.value) || 0;
+            if (!desc) return;
+            addJob({ job: desc, price: price, color: selectedColor });
+            descEl.value = ''; priceEl.value = '0'; descEl.focus();
+        }
+
+        function startEditInline(id) {
+            const job = jobs.find(j => j.id === id); if (!job) return;
+            const el = document.querySelector(`.job-item[data-id="${id}"]`); if (!el) return;
+            const nameEl = el.querySelector('.job-name');
+            const priceEl = el.querySelector('.job-price');
+            nameEl.innerHTML = `<input class="edit-input" id="editName" value="${escapeHtml(job.job)}">`;
+            priceEl.innerHTML = `<input class="edit-input" id="editPrice" value="${job.price}" style="width:100px;">`;
+            const editBtn = el.querySelector('.edit-btn');
+            editBtn.textContent = 'Save'; editBtn.className = 'action-btn save-btn';
+            editBtn.onclick = function() { saveInlineEdit(id); };
+        }
+
+        function saveInlineEdit(id) {
+            const job = jobs.find(j => j.id === id); if (!job) return;
+            const newJobName = (document.getElementById('editName') || {}).value.trim() || job.job;
+            const newPrice = parseFloat(document.getElementById('editPrice')?.value) || 0;
+            if (!newJobName) return;
+            updateJob(id, { job: newJobName, price: newPrice });
+        }
+
+        function startEditName(id, el) {
+            const job = jobs.find(j => j.id === id); if (!job) return;
+            el.innerHTML = `<input class="edit-input" value="${escapeHtml(job.job)}" onblur="saveNameEdit(${id}, this)" onkeypress="if(event.key==='Enter')this.blur()">`;
+            el.querySelector('input').focus();
+        }
+        function saveNameEdit(id, input) { const n = input.value.trim(); if (n) updateJob(id, { job: n }); else fetchJobs(); }
+
+        function startEditPrice(id, el) {
+            const job = jobs.find(j => j.id === id); if (!job) return;
+            el.innerHTML = `<input class="edit-input" value="${job.price}" style="width:100px;text-align:right;" onblur="savePriceEdit(${id}, this)" onkeypress="if(event.key==='Enter')this.blur()">`;
+            el.querySelector('input').focus(); el.querySelector('input').select();
+        }
+        function savePriceEdit(id, input) { updateJob(id, { price: parseFloat(input.value) || 0 }); }
+
+        function saveToStorage() { try { localStorage.setItem('houseJobs', JSON.stringify(jobs)); } catch (e) { console.error('Error saving to localStorage:', e); } }
+    </script>
+</body>
+</html>
